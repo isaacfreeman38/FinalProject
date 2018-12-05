@@ -30,4 +30,11 @@ NFLDataTable <-
 ```{r}
 View(NFLDataTable)
 ```
+#Create Variable "totalpoints"
+```{r}
+NFLDataTable <-
+  NFLDataTable %>%
+  mutate(totalpoints = score_away + score_home)
+View(NFLDataTable)
+```
 
