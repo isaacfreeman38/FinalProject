@@ -1,0 +1,33 @@
+---
+title: "Real Final Project"
+author: "Isaac Freeman"
+date: "12/5/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Clean Up
+```{r}
+rm(list = ls())
+```
+#Packages
+```{r}
+library(mosaic)
+library(tidyverse)
+library(dplyr)
+library(data.table)
+```
+#Upload Dataset
+```{r}
+NFLDataset <- file.choose()
+
+NFLDataTable <-
+  data.table::fread(NFLDataset)
+```
+#View Data Table
+```{r}
+View(NFLDataTable)
+```
+
