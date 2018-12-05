@@ -37,4 +37,10 @@ NFLDataTable <-
   mutate(totalpoints = score_away + score_home)
 View(NFLDataTable)
 ```
-
+#Filter out games without over/under
+```{r}
+NFLDataTable <-
+NFLDataTable %>%
+  na.omit(over_under_line)
+View(NFLDataTable)
+```
