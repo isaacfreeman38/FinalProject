@@ -8,69 +8,67 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-#Clean Up
+
 ```{r}
-rm(list = ls())
+rm(list = ls()) #cleanup
 ```
-#Packages
+
 ```{r}
 library(mosaic)
 library(tidyverse)
 library(dplyr)
 library(data.table)
 library(ggpubr)
-library(ggplot2)
+library(ggplot2) #Download Packages
 ```
-#Upload Dataset
+
 ```{r}
 NFLDataset <- file.choose()
 
 NFLDataTableOriginal <-
-  data.table::fread(NFLDataset)
+  data.table::fread(NFLDataset) #Upload Dataset
 ```
-#View Data Table
+
 ```{r}
 View(NFLDataTableOriginal)
 ```
-#Create Variable "totalpoints"
+
 ```{r}
 NFLDataTable <-
   NFLDataTableOriginal %>%
-  mutate(totalpoints = score_away + score_home)
+  mutate(totalpoints = score_away + score_home) #Create Variable "totalpoints"
 View(NFLDataTable)
 ```
-#Filter out games without over/under
+
 ```{r}
 NFLDataTable <-
 NFLDataTable %>%
-  na.omit(over_under_line)
+  na.omit(over_under_line) #Filter out games without over/under
 View(NFLDataTable)
 ```
-#Filter Out Seasons prior to 2013
+
 ```{r}
 NFLDataTable <-
   NFLDataTable %>%
-  filter(schedule_season >= 2013)
+  filter(schedule_season >= 2013) #Filter Out Seasons prior to 2013
 View(NFLDataTable)
 ```
 I was curious how accurate the over/under predictions actually are, so I plotted the over/unders for each game against the total number of points that were scored in that game.  I also separated the graphs between playoff and regular season games to see if there was a difference in the correlation there.
-#Test Correlation Between Over/Under and Total Points Scored
 ```{r}
 ggscatter(NFLDataTable, x = "over_under_line", y = "totalpoints", 
           add = "reg.line", conf.int = FALSE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Over/Under", ylab = "Total Points Scored") +
-            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff)
+            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Over/Under and Total Points Scored
 ```
 As shown in the graph above, there is (unsurprisingly) a positive correlation between over/unders and total points scored, but interestingly, the correlation is substantially stronger in the playoffs compared to regular season games.
 
 I also wanted to check for a correlation between temperature and total points scored.  I figured that there would be a positive correlation, since it becomes harder to throw and catch the ball as it gets colder, but I didn't expect to see a very strong correlation.
-#Test Correlation Between Temperature and Total Points Scored
 ```{r}
 ggscatter(NFLDataTable, x = "weather_temperature", y = "totalpoints", 
           add = "reg.line", conf.int = FALSE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Temperature (F)", ylab = "Total Points Scored") +
-            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff)
+            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Temperature and Total Points Scored
 ```
 I was very shocked to find that there was actually the slightest negative correlation between the variables during the regular season (although it was close enough to 0 that it was essentially negligent).  This trend did not hold up in the playoffs, though, as there was a low positive correlation there as shown in the graphs above.
