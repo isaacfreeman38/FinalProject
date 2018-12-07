@@ -32,21 +32,24 @@ NFLDataTableOriginal <-
 ```{r}
 View(NFLDataTableOriginal)
 ```
-
+I needed to create a new variable to use for later analysis that has the point total from each game, so I added together the home score and the away score and called this variable "totalpoints".
 ```{r}
 NFLDataTable <-
   NFLDataTableOriginal %>%
   mutate(totalpoints = score_away + score_home) #Create Variable "totalpoints"
 View(NFLDataTable)
 ```
-
+I was working with a huge dataset, so since a lot of my analysis is based on over/unders, I filtered out games without an over/under or totalpoints.
 ```{r}
 NFLDataTable <-
 NFLDataTable %>%
-  na.omit(over_under_line) #Filter out games without over/under
+  na.omit(over_under_line) #Filter out games without over/under or totalpoints
+NFLDataTable <-
+NFLDataTable %>%
+  na.omit(totalpoints)
 View(NFLDataTable)
 ```
-
+My dataset was still quite massive and messy to work with, so I chose to just look at the last 5 seasons, and selected only seasons 2013 and later.
 ```{r}
 NFLDataTable <-
   NFLDataTable %>%
@@ -71,4 +74,34 @@ ggscatter(NFLDataTable, x = "weather_temperature", y = "totalpoints",
           xlab = "Temperature (F)", ylab = "Total Points Scored") +
             aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Temperature and Total Points Scored
 ```
-I was very shocked to find that there was actually the slightest negative correlation between the variables during the regular season (although it was close enough to 0 that it was essentially negligent).  This trend did not hold up in the playoffs, though, as there was a low positive correlation there as shown in the graphs above.
+I was very shocked to find that there was actually a slight negative correlation between the variables during the regular season (although it was so close to 0 that it was essentially negligent).  In the playoffs, however, there was a low positive correlation there as shown in the graphs above.
+
+I was curious what the average number of points scored per NFL game has been over the past 5 years.  Judging by my previous graphs, I figured it would be somewhere between 40 and 50.
+
+```{r}
+mean(as.vector(NFLDataTable$totalpoints))
+```
+I calculated the exact value to be 42.44824, right around what I was expecting.
+
+I was also curious what the distribution of number of points scored per game looked like, although I guessed it would be approximately normal.
+```{r}
+NFLDataTable %>%
+  ggplot(aes(x = totalpoints)) + 
+  geom_density(fill = "turquoise", adjust = 2) +
+  facet_wrap(~schedule_playoff)
+```
+Upon graphing it, I found that it was indeed approximately normal, with a center at around 40 points for regular season games and closer to 50 for playoff games.
+
+Since I didn't find much of a correlation between points and temperature, I wondered if maybe it was the wind speed that had more of an effect on scores.  To test this, I only compared games that had wind speeds higher than 0 mph, because I wanted to see if there was a correlation, and the high proportion of games in domes would probably skew my numbers.
+
+```{r}
+NFLDataTableWindy <-
+  NFLDataTable %>%
+  filter(weather_wind_mph > 0) #Filter out games with wind speeds of 0
+```
+
+```{r}
+NFLDataTableWindy %>%
+  ggplot(aes(x = weather_wind_mph, y = totalpoints, color = schedule_playoff)) + stat_smooth() + geom_point(alpha = 0)
+```
+We can see a more clear negative trend here, especially in the playoff games, that higher wind speeds result in lower point totals.  But again, it is very subtle.  This lack of a strong correlation has been very eye-opening to me considering the weekly advice from fantasy football "experts" that says to avoid playing players in cold or windy conditions.
