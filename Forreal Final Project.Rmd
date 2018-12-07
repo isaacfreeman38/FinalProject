@@ -23,7 +23,7 @@ library(ggplot2) #Download Packages
 ```
 
 ```{r}
-NFLDataset <- file.choose()
+NFLDataset <- "/Users/isaacfreeman/Downloads/spreadspoke_scores.csv"
 
 NFLDataTableOriginal <-
   data.table::fread(NFLDataset) #Upload Dataset
