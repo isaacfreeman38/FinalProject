@@ -4,17 +4,17 @@ author: "Isaac Freeman"
 date: "12/5/2018"
 output: html_document
 ---
-
+#Intro
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r include=FALSE}
 #cleanup
 rm(list = ls())
 ```
 
-```{r}
+```{r include=FALSE}
 #Download Packages
 library(mosaic)
 library(tidyverse)
@@ -26,7 +26,7 @@ library(party)
 library(rpart.plot)
 ```
 
-```{r}
+```{r include=FALSE}
 #Upload Dataset
 NFLDataset <- "/Users/isaacfreeman/Downloads/spreadspoke_scores.csv"
 
@@ -35,7 +35,7 @@ NFLDataTableOriginal <-
 ```
 
 Since my main interest was the total number of points scored in each game, I needed to create a new variable for this, since it didn't exist in the original table, so I added together the home score and the away score and called this variable "totalpoints".
-```{r}
+```{r include=FALSE}
 #Create Variable "totalpoints"
 NFLDataTable <-
   NFLDataTableOriginal %>%
@@ -43,7 +43,7 @@ NFLDataTable <-
 str(NFLDataTable)
 ```
 I was working with a huge dataset, so since most of my analysis is based on total points, I filtered out games without an over/under or totalpoints.
-```{r}
+```{r include=FALSE}
 #Filter out games without over/under or totalpoints
 NFLDataTable <-
 NFLDataTable %>%
@@ -54,7 +54,7 @@ NFLDataTable %>%
 str(NFLDataTable)
 ```
 My dataset was still quite massive and messy to work with, so I chose to just look at the last 5 seasons, and selected only seasons 2013 and later.
-```{r}
+```{r include=FALSE}
 #Filter Out Seasons prior to 2013
 NFLDataTable <-
   NFLDataTable %>%
