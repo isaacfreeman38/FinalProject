@@ -1,5 +1,5 @@
 ---
-title: "Real Final Project"
+title: "A Closer Look at NFL Scoring"
 author: "Isaac Freeman"
 date: "12/5/2018"
 output: html_document
@@ -19,7 +19,9 @@ library(tidyverse)
 library(dplyr)
 library(data.table)
 library(ggpubr)
-library(ggplot2) #Download Packages
+library(ggplot2)
+library(party)
+library(rpart.plot) #Download Packages
 ```
 
 ```{r}
@@ -32,14 +34,14 @@ NFLDataTableOriginal <-
 ```{r}
 View(NFLDataTableOriginal)
 ```
-I needed to create a new variable to use for later analysis that has the point total from each game, so I added together the home score and the away score and called this variable "totalpoints".
+Since my main interest was the total number of points scored in each game, I needed to create a new variable for this, since it didn't exist in the original table, so I added together the home score and the away score and called this variable "totalpoints".
 ```{r}
 NFLDataTable <-
   NFLDataTableOriginal %>%
   mutate(totalpoints = score_away + score_home) #Create Variable "totalpoints"
 View(NFLDataTable)
 ```
-I was working with a huge dataset, so since a lot of my analysis is based on over/unders, I filtered out games without an over/under or totalpoints.
+I was working with a huge dataset, so since most of my analysis is based on total points, I filtered out games without an over/under or totalpoints.
 ```{r}
 NFLDataTable <-
 NFLDataTable %>%
@@ -56,6 +58,7 @@ NFLDataTable <-
   filter(schedule_season >= 2013) #Filter Out Seasons prior to 2013
 View(NFLDataTable)
 ```
+#How Good Are We At Predicting Total Points Scored?
 I was curious how accurate the over/under predictions actually are, so I plotted the over/unders for each game against the total number of points that were scored in that game.  I also separated the graphs between playoff and regular season games to see if there was a difference in the correlation there.
 ```{r}
 ggscatter(NFLDataTable, x = "over_under_line", y = "totalpoints", 
@@ -66,6 +69,7 @@ ggscatter(NFLDataTable, x = "over_under_line", y = "totalpoints",
 ```
 As shown in the graph above, there is (unsurprisingly) a positive correlation between over/unders and total points scored, but interestingly, the correlation is substantially stronger in the playoffs compared to regular season games.
 
+#How Much of a Factor is The Weather?
 I also wanted to check for a correlation between temperature and total points scored.  I figured that there would be a positive correlation, since it becomes harder to throw and catch the ball as it gets colder, but I didn't expect to see a very strong correlation.
 ```{r}
 ggscatter(NFLDataTable, x = "weather_temperature", y = "totalpoints", 
@@ -75,22 +79,6 @@ ggscatter(NFLDataTable, x = "weather_temperature", y = "totalpoints",
             aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Temperature and Total Points Scored
 ```
 I was very shocked to find that there was actually a slight negative correlation between the variables during the regular season (although it was so close to 0 that it was essentially negligent).  In the playoffs, however, there was a low positive correlation there as shown in the graphs above.
-
-I was curious what the average number of points scored per NFL game has been over the past 5 years.  Judging by my previous graphs, I figured it would be somewhere between 40 and 50.
-
-```{r}
-mean(as.vector(NFLDataTable$totalpoints))
-```
-I calculated the exact value to be 42.44824, right around what I was expecting.
-
-I was also curious what the distribution of number of points scored per game looked like, although I guessed it would be approximately normal.
-```{r}
-NFLDataTable %>%
-  ggplot(aes(x = totalpoints)) + 
-  geom_density(fill = "turquoise", adjust = 2) +
-  facet_wrap(~schedule_playoff)
-```
-Upon graphing it, I found that it was indeed approximately normal, with a center at around 40 points for regular season games and closer to 50 for playoff games.
 
 Since I didn't find much of a correlation between points and temperature, I wondered if maybe it was the wind speed that had more of an effect on scores.  To test this, I only compared games that had wind speeds higher than 0 mph, because I wanted to see if there was a correlation, and the high proportion of games in domes would probably skew my numbers.
 
@@ -105,3 +93,32 @@ NFLDataTableWindy %>%
   ggplot(aes(x = weather_wind_mph, y = totalpoints, color = schedule_playoff)) + stat_smooth() + geom_point(alpha = 0)
 ```
 We can see a more clear negative trend here, especially in the playoff games, that higher wind speeds result in lower point totals.  But again, it is very subtle.  This lack of a strong correlation has been very eye-opening to me considering the weekly advice from fantasy football "experts" that says to avoid playing players in cold or windy conditions.
+
+I was curious what the average number of points scored per NFL game has been over the past 5 years.  Judging by my previous graphs, I figured it would be somewhere between 40 and 50.
+
+```{r}
+mean(as.vector(NFLDataTable$totalpoints))
+```
+I calculated the exact value to be 42.44824, right around what I was expecting.
+
+#How Many Points Do Teams Score?
+I was also curious what the distribution of number of points scored per game looked like, although I guessed it would be approximately normal.
+```{r}
+NFLDataTable %>%
+  ggplot(aes(x = totalpoints)) + 
+  geom_density(fill = "turquoise", adjust = 2) +
+  facet_wrap(~schedule_playoff)
+```
+Upon graphing it, I found that it was indeed approximately normal, with a center at around 40 points for regular season games and closer to 50 for playoff games.
+
+#A New Scoring Model
+I decided to come up with my own predictive model for total points scored, using over/under, temperature, and wind as predictors (I only used games with wind speed of 1 mph or more).
+```{r}
+MyModel <- 
+  party::ctree(totalpoints ~ over_under_line + weather_temperature + weather_wind_mph, data = NFLDataTableWindy)
+plot(MyModel, type = "simple")
+```
+This model ended up not even taking the temperature into account at all, which is not very surprising considering the fact that the correlation that I found earlier was so insignificant.  Also unsurprisingly, the over/under line was the most accurate predictor for total points, but the decision tree does show that wind is more of a factor in lower scoring games, less than 47 points specifically.
+
+#Conlcusion
+Through this investigation, I have learned that over/unders are actually quite accurate, and that weather doesn't play nearly as much of a role in the number of points scored in a game as people think.
