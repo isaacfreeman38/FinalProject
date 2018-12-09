@@ -10,10 +10,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-rm(list = ls()) #cleanup
+#cleanup
+rm(list = ls())
 ```
 
 ```{r}
+#Download Packages
 library(mosaic)
 library(tidyverse)
 library(dplyr)
@@ -21,74 +23,79 @@ library(data.table)
 library(ggpubr)
 library(ggplot2)
 library(party)
-library(rpart.plot) #Download Packages
+library(rpart.plot)
 ```
 
 ```{r}
+#Upload Dataset
 NFLDataset <- "/Users/isaacfreeman/Downloads/spreadspoke_scores.csv"
 
 NFLDataTableOriginal <-
-  data.table::fread(NFLDataset) #Upload Dataset
+  data.table::fread(NFLDataset)
 ```
 
-```{r}
-View(NFLDataTableOriginal)
-```
 Since my main interest was the total number of points scored in each game, I needed to create a new variable for this, since it didn't exist in the original table, so I added together the home score and the away score and called this variable "totalpoints".
 ```{r}
+#Create Variable "totalpoints"
 NFLDataTable <-
   NFLDataTableOriginal %>%
-  mutate(totalpoints = score_away + score_home) #Create Variable "totalpoints"
-View(NFLDataTable)
+  mutate(totalpoints = score_away + score_home) 
+str(NFLDataTable)
 ```
 I was working with a huge dataset, so since most of my analysis is based on total points, I filtered out games without an over/under or totalpoints.
 ```{r}
+#Filter out games without over/under or totalpoints
 NFLDataTable <-
 NFLDataTable %>%
-  na.omit(over_under_line) #Filter out games without over/under or totalpoints
+  na.omit(over_under_line)
 NFLDataTable <-
 NFLDataTable %>%
   na.omit(totalpoints)
-View(NFLDataTable)
+str(NFLDataTable)
 ```
 My dataset was still quite massive and messy to work with, so I chose to just look at the last 5 seasons, and selected only seasons 2013 and later.
 ```{r}
+#Filter Out Seasons prior to 2013
 NFLDataTable <-
   NFLDataTable %>%
-  filter(schedule_season >= 2013) #Filter Out Seasons prior to 2013
-View(NFLDataTable)
+  filter(schedule_season >= 2013)
+str(NFLDataTable)
 ```
 #How Good Are We At Predicting Total Points Scored?
 I was curious how accurate the over/under predictions actually are, so I plotted the over/unders for each game against the total number of points that were scored in that game.  I also separated the graphs between playoff and regular season games to see if there was a difference in the correlation there.
 ```{r}
+#Test Correlation Between Over/Under and Total Points Scored
 ggscatter(NFLDataTable, x = "over_under_line", y = "totalpoints", 
           add = "reg.line", conf.int = FALSE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Over/Under", ylab = "Total Points Scored") +
-            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Over/Under and Total Points Scored
+            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff)
 ```
-As shown in the graph above, there is (unsurprisingly) a positive correlation between over/unders and total points scored, but interestingly, the correlation is substantially stronger in the playoffs compared to regular season games.
+As shown in the graph, there is (unsurprisingly) a positive correlation between over/unders and total points scored, but interestingly, the correlation is substantially stronger in the playoffs compared to regular season games.
 
 #How Much of a Factor is The Weather?
 I also wanted to check for a correlation between temperature and total points scored.  I figured that there would be a positive correlation, since it becomes harder to throw and catch the ball as it gets colder, but I didn't expect to see a very strong correlation.
 ```{r}
+#Test Correlation Between Temperature and Total Points Scored
 ggscatter(NFLDataTable, x = "weather_temperature", y = "totalpoints", 
           add = "reg.line", conf.int = FALSE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Temperature (F)", ylab = "Total Points Scored") +
-            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff) #Test Correlation Between Temperature and Total Points Scored
+            aes(color = schedule_playoff) + facet_wrap(~schedule_playoff)
 ```
 I was very shocked to find that there was actually a slight negative correlation between the variables during the regular season (although it was so close to 0 that it was essentially negligent).  In the playoffs, however, there was a low positive correlation there as shown in the graphs above.
 
 Since I didn't find much of a correlation between points and temperature, I wondered if maybe it was the wind speed that had more of an effect on scores.  To test this, I only compared games that had wind speeds higher than 0 mph, because I wanted to see if there was a correlation, and the high proportion of games in domes would probably skew my numbers.
 
 ```{r}
+#Filter out games with wind speeds of 0
 NFLDataTableWindy <-
   NFLDataTable %>%
-  filter(weather_wind_mph > 0) #Filter out games with wind speeds of 0
+  filter(weather_wind_mph > 0)
 ```
 
 ```{r}
+#Graphing Points Vs Wind Speeds
 NFLDataTableWindy %>%
   ggplot(aes(x = weather_wind_mph, y = totalpoints, color = schedule_playoff)) + stat_smooth() + geom_point(alpha = 0)
 ```
@@ -99,11 +106,12 @@ I was curious what the average number of points scored per NFL game has been ove
 ```{r}
 mean(as.vector(NFLDataTable$totalpoints))
 ```
-I calculated the exact value to be 42.44824, right around what I was expecting.
+I calculated the exact value to be 45.74417, right around what I was expecting.
 
 #How Many Points Do Teams Score?
 I was also curious what the distribution of number of points scored per game looked like, although I guessed it would be approximately normal.
 ```{r}
+#Plotting Point Distribution
 NFLDataTable %>%
   ggplot(aes(x = totalpoints)) + 
   geom_density(fill = "turquoise", adjust = 2) +
@@ -114,6 +122,7 @@ Upon graphing it, I found that it was indeed approximately normal, with a center
 #A New Scoring Model
 I decided to come up with my own predictive model for total points scored, using over/under, temperature, and wind as predictors (I only used games with wind speed of 1 mph or more).
 ```{r}
+#Creating my predictive model
 MyModel <- 
   party::ctree(totalpoints ~ over_under_line + weather_temperature + weather_wind_mph, data = NFLDataTableWindy)
 plot(MyModel, type = "simple")
